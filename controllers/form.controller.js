@@ -21,20 +21,33 @@ exports.createForm = (req, res, next) => {
     })
     .then((result) => {
       console.log(result);
-      res.status(201).json({ message: "Form Created Successfully" });
+      res
+        .status(201)
+        .json({ message: "Form Created Successfully", formId: form.id });
     })
     .catch((err) => {
-      console.log(err);
+      return res.status(500).send({
+        error: err,
+        message: err.message || "Some error occurred while Creating Form  ",
+      });
     });
 };
 exports.getForm = (req, res, next) => {
   const formId = req.params.formId;
   Form.findByPk(formId, { include: ["fields"] })
     .then((form) => {
+      if (!form) {
+        return res.status(404).send({
+          message: "Form not found with id " + req.params.formId,
+        });
+      }
       res.status(201).json({ form: form });
     })
     .catch((err) => {
-      console.log(err);
+      return res.status(500).send({
+        error: err,
+        message: err.message || "Some error occurred while Retriving Form  ",
+      });
     });
 };
 exports.sendResponse = (req, res, next) => {
@@ -44,6 +57,12 @@ exports.sendResponse = (req, res, next) => {
   let response;
   Form.findByPk(formId)
     .then((form) => {
+      if (!form) {
+        return res.status(404).send({
+          message:
+            "Response cannot be saved , Unkown Form " + req.params.formId,
+        });
+      }
       return form.createResponse({
         from: from,
       });
@@ -60,13 +79,23 @@ exports.sendResponse = (req, res, next) => {
       res.status(201).json({ message: "Response Submitted Successfully" });
     })
     .catch((err) => {
-      console.log(err);
+      return res.status(500).send({
+        error: err,
+        message:
+          err.message ||
+          "Some error occurred while Submitting Response for Form ",
+      });
     });
 };
 exports.getResponses = (req, res, next) => {
   const formId = req.params.formId;
   Form.findByPk(formId)
     .then((form) => {
+      if (!form) {
+        return res.status(404).send({
+          message: "Form not found with id " + req.params.formId,
+        });
+      }
       return form.getResponses({
         include: [
           {
@@ -87,7 +116,12 @@ exports.getResponses = (req, res, next) => {
       res.status(201).json({ responses: responses });
     })
     .catch((err) => {
-      console.log(err);
+      return res.status(500).send({
+        error: err,
+        message:
+          err.message ||
+          "Some error occurred while retrieving Responses for Form ",
+      });
     });
 };
 
@@ -95,6 +129,11 @@ exports.getResponse = (req, res, next) => {
   const responseId = req.params.responseId;
   Response.findByPk(responseId)
     .then((response) => {
+      if (!response) {
+        return res.status(404).send({
+          message: "Response not found with id " + req.params.responseId,
+        });
+      }
       return response.getValues({
         include: {
           model: Field,
@@ -112,6 +151,10 @@ exports.getResponse = (req, res, next) => {
       res.status(201).json({ responses: responses });
     })
     .catch((err) => {
-      console.log(err);
+      return res.status(500).send({
+        error: err,
+        message:
+          err.message || "Some error occurred while Retriving Response  ",
+      });
     });
 };
