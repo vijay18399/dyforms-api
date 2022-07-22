@@ -2,8 +2,8 @@ const Sequelize = require("sequelize");
 
 const sequelize = require("../util/db");
 
-const Field = sequelize.define(
-  "field",
+const ValueOption = sequelize.define(
+  "valueOption",
   {
     id: {
       type: Sequelize.INTEGER,
@@ -11,12 +11,11 @@ const Field = sequelize.define(
       allowNull: false,
       primaryKey: true,
     },
-    label: Sequelize.STRING,
-    data_type: Sequelize.STRING,
+    value: Sequelize.STRING,
   },
   {
     timestamps: false,
   }
 );
 
-module.exports = Field;
+module.exports = ValueOption;

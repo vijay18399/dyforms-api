@@ -9,6 +9,7 @@ const Response = sequelize.define("response", {
     allowNull: false,
     primaryKey: true,
   },
+  from: Sequelize.STRING,
 });
 
 module.exports = Response;

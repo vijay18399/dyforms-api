@@ -2,28 +2,39 @@ const Form = require("../models/form");
 const Field = require("../models/field");
 const Value = require("../models/value");
 const Response = require("../models/response");
+const FieldOption = require("../models/fieldOption");
+const ValueOption = require("../models/valueOption");
 
+Form.Field = Form.hasMany(Field, { as: "fields" });
+Form.Response = Form.hasMany(Response, { as: "responses" });
+Response.Value = Response.hasMany(Value, { as: "values" });
+Field.FieldOption = Field.hasMany(FieldOption, { as: "fieldOptions" });
+Field.Value = Field.hasMany(Value);
+Value.Field = Value.belongsTo(Field, { as: "field" });
+Value.ValueOption = Value.hasMany(ValueOption, { as: "valueOptions" });
 exports.createForm = (req, res, next) => {
   const name = req.body.name;
-  const user_id = req.body.user_id;
   const fields = req.body.fields;
-  let form;
-  Form.create({
-    name: name,
-    user_id: user_id,
-  })
-    .then((data) => {
-      form = data;
-      return Field.bulkCreate(fields);
-    })
-    .then((fields) => {
-      return form.addFields(fields);
-    })
+  console.log(fields);
+  Form.create(
+    {
+      name: name,
+      fields: fields,
+    },
+    {
+      include: [
+        {
+          association: Form.Field,
+          include: [Field.FieldOption],
+        },
+      ],
+    }
+  )
     .then((result) => {
       console.log(result);
       res
         .status(201)
-        .json({ message: "Form Created Successfully", formId: form.id });
+        .json({ message: "Form Created Successfully", formId: result.id });
     })
     .catch((err) => {
       return res.status(500).send({
@@ -34,7 +45,18 @@ exports.createForm = (req, res, next) => {
 };
 exports.getForm = (req, res, next) => {
   const formId = req.params.formId;
-  Form.findByPk(formId, { include: ["fields"] })
+  Form.findByPk(formId, {
+    include: [
+      {
+        association: Form.Field,
+        attributes: { exclude: ["formId"] },
+        include: {
+          association: Field.FieldOption,
+          attributes: { exclude: ["fieldId"] },
+        },
+      },
+    ],
+  })
     .then((form) => {
       if (!form) {
         return res.status(404).send({
@@ -54,7 +76,7 @@ exports.sendResponse = (req, res, next) => {
   const formId = req.params.formId;
   const from = req.body.from;
   const values = req.body.values;
-  let response;
+
   Form.findByPk(formId)
     .then((form) => {
       if (!form) {
@@ -63,16 +85,20 @@ exports.sendResponse = (req, res, next) => {
             "Response cannot be saved , Unkown Form " + req.params.formId,
         });
       }
-      return form.createResponse({
-        from: from,
-      });
-    })
-    .then((data) => {
-      response = data;
-      return Value.bulkCreate(values);
-    })
-    .then((values) => {
-      return response.addValues(values);
+      return form.createResponse(
+        {
+          from: from,
+          values: values,
+        },
+        {
+          include: [
+            {
+              association: Response.Value,
+              include: [Value.ValueOption],
+            },
+          ],
+        }
+      );
     })
     .then((result) => {
       console.log(result);
@@ -99,14 +125,18 @@ exports.getResponses = (req, res, next) => {
       return form.getResponses({
         include: [
           {
-            model: Value,
-            as: "values",
+            association: Response.Value,
+            include: [
+              {
+                association: Value.ValueOption,
+                attributes: { exclude: ["valueId"] },
+              },
+              {
+                association: Value.Field,
+                attributes: { exclude: ["formId"] },
+              },
+            ],
             attributes: { exclude: ["responseId", "fieldId"] },
-            include: {
-              model: Field,
-              as: "field",
-              attributes: { exclude: ["formId"] },
-            },
           },
         ],
         attributes: { exclude: ["formId"] },
@@ -134,17 +164,24 @@ exports.getResponse = (req, res, next) => {
           message: "Response not found with id " + req.params.responseId,
         });
       }
-      return response.getValues({
-        include: {
-          model: Field,
-          as: "field",
-          attributes: {
-            exclude: ["formId"],
+      return Response.findByPk(responseId, {
+        include: [
+          {
+            association: Response.Value,
+            include: [
+              {
+                association: Value.ValueOption,
+                attributes: { exclude: ["valueId"] },
+              },
+              {
+                association: Value.Field,
+                attributes: { exclude: ["formId"] },
+              },
+            ],
+            attributes: { exclude: ["responseId", "fieldId"] },
           },
-        },
-        attributes: {
-          exclude: ["responseId", "fieldId"],
-        },
+        ],
+        attributes: { exclude: ["formId"] },
       });
     })
     .then((responses) => {
