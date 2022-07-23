@@ -3,7 +3,6 @@ const Field = require("../models/field");
 const Value = require("../models/value");
 const Response = require("../models/response");
 const FieldOption = require("../models/fieldOption");
-const ValueOption = require("../models/valueOption");
 
 Form.Field = Form.hasMany(Field, { as: "fields" });
 Form.Response = Form.hasMany(Response, { as: "responses" });
@@ -11,7 +10,7 @@ Response.Value = Response.hasMany(Value, { as: "values" });
 Field.FieldOption = Field.hasMany(FieldOption, { as: "fieldOptions" });
 Field.Value = Field.hasMany(Value);
 Value.Field = Value.belongsTo(Field, { as: "field" });
-Value.ValueOption = Value.hasMany(ValueOption, { as: "valueOptions" });
+
 exports.createForm = (req, res, next) => {
   const name = req.body.name;
   const fields = req.body.fields;
@@ -94,7 +93,6 @@ exports.sendResponse = (req, res, next) => {
           include: [
             {
               association: Response.Value,
-              include: [Value.ValueOption],
             },
           ],
         }
@@ -127,10 +125,6 @@ exports.getResponses = (req, res, next) => {
           {
             association: Response.Value,
             include: [
-              {
-                association: Value.ValueOption,
-                attributes: { exclude: ["valueId"] },
-              },
               {
                 association: Value.Field,
                 attributes: { exclude: ["formId"] },
@@ -169,10 +163,6 @@ exports.getResponse = (req, res, next) => {
           {
             association: Response.Value,
             include: [
-              {
-                association: Value.ValueOption,
-                attributes: { exclude: ["valueId"] },
-              },
               {
                 association: Value.Field,
                 attributes: { exclude: ["formId"] },
