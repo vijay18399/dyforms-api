@@ -113,8 +113,10 @@ exports.sendResponse = (req, res, next) => {
 };
 exports.getResponses = (req, res, next) => {
   const formId = req.params.formId;
+  let formName;
   Form.findByPk(formId)
     .then((form) => {
+      formName = form.name;
       if (!form) {
         return res.status(404).send({
           message: "Form not found with id " + req.params.formId,
@@ -137,7 +139,7 @@ exports.getResponses = (req, res, next) => {
       });
     })
     .then((responses) => {
-      res.status(201).json({ responses: responses });
+      res.status(201).json({ responses: responses, formName: formName });
     })
     .catch((err) => {
       return res.status(500).send({
@@ -151,11 +153,11 @@ exports.getResponses = (req, res, next) => {
 
 exports.deleteResponses = (req, res, next) => {
   const formId = req.params.formId;
-  Response.findByPk(responseId)
-    .then((response) => {
-      if (!response) {
+  Form.findByPk(formId)
+    .then((form) => {
+      if (!form) {
         return res.status(404).send({
-          message: "Response not found with id " + req.params.responseId,
+          message: "Form not found with id " + req.params.formId,
         });
       }
       return Response.destroy({
@@ -186,7 +188,7 @@ exports.deleteResponse = (req, res, next) => {
       }
       return Response.destroy({
         where: {
-          responseId: responseId,
+          id: responseId,
         },
       });
     })
@@ -211,7 +213,7 @@ exports.deleteForm = (req, res, next) => {
       }
       return Form.destroy({
         where: {
-          formId: formId,
+          id: formId,
         },
       });
     })
