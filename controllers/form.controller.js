@@ -149,7 +149,33 @@ exports.getResponses = (req, res, next) => {
     });
 };
 
-exports.getResponse = (req, res, next) => {
+exports.deleteResponses = (req, res, next) => {
+  const formId = req.params.formId;
+  Response.findByPk(responseId)
+    .then((response) => {
+      if (!response) {
+        return res.status(404).send({
+          message: "Response not found with id " + req.params.responseId,
+        });
+      }
+      return Response.destroy({
+        where: {
+          formId: formId,
+        },
+      });
+    })
+    .then((responses) => {
+      res.status(201).json({ message: "Responses Deleted Successfully" });
+    })
+    .catch((err) => {
+      return res.status(500).send({
+        error: err,
+        message:
+          err.message || "Some error occurred while Deleting Responses  ",
+      });
+    });
+};
+exports.deleteResponse = (req, res, next) => {
   const responseId = req.params.responseId;
   Response.findByPk(responseId)
     .then((response) => {
@@ -158,30 +184,44 @@ exports.getResponse = (req, res, next) => {
           message: "Response not found with id " + req.params.responseId,
         });
       }
-      return Response.findByPk(responseId, {
-        include: [
-          {
-            association: Response.Value,
-            include: [
-              {
-                association: Value.Field,
-                attributes: { exclude: ["formId"] },
-              },
-            ],
-            attributes: { exclude: ["responseId", "fieldId"] },
-          },
-        ],
-        attributes: { exclude: ["formId"] },
+      return Response.destroy({
+        where: {
+          responseId: responseId,
+        },
       });
     })
-    .then((responses) => {
-      res.status(201).json({ responses: responses });
+    .then((result) => {
+      res.status(201).json({ message: "Response Deleted Successfully" });
     })
     .catch((err) => {
       return res.status(500).send({
         error: err,
-        message:
-          err.message || "Some error occurred while Retriving Response  ",
+        message: err.message || "Some error occurred while Deleting Response  ",
+      });
+    });
+};
+exports.deleteForm = (req, res, next) => {
+  const formId = req.params.formId;
+  Form.findByPk(formId)
+    .then((response) => {
+      if (!response) {
+        return res.status(404).send({
+          message: "Form not found with id " + req.params.formId,
+        });
+      }
+      return Form.destroy({
+        where: {
+          formId: formId,
+        },
+      });
+    })
+    .then((result) => {
+      res.status(201).json({ message: "Deleted Successfully" });
+    })
+    .catch((err) => {
+      return res.status(500).send({
+        error: err,
+        message: err.message || "Some error occurred while Deleting Form  ",
       });
     });
 };
